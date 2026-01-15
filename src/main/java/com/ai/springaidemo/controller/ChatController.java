@@ -5,6 +5,7 @@ import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.client.advisor.MessageChatMemoryAdvisor;
 import org.springframework.ai.chat.client.advisor.vectorstore.QuestionAnswerAdvisor;
 import org.springframework.ai.chat.memory.ChatMemory;
+import org.springframework.ai.vectorstore.SearchRequest;
 import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.http.MediaType;
@@ -27,9 +28,14 @@ public class ChatController {
     public ChatController(ChatClient.Builder chatClientBuilder, ChatMemory chatMemory, VectorStore vectorStore, IngestionService ingestionService, JdbcTemplate jdbcTemplate) {
         this.ingestionService = ingestionService;
         this.jdbcTemplate = jdbcTemplate;
+        // Create a specialized Search Request for speed
+        var searchRequest = SearchRequest.builder().topK(3).similarityThreshold(0.7).build();
+
         this.chatClient = chatClientBuilder
                 .defaultAdvisors(MessageChatMemoryAdvisor.builder(chatMemory).build())
-                .defaultAdvisors(QuestionAnswerAdvisor.builder(vectorStore).build())
+                .defaultAdvisors(QuestionAnswerAdvisor.builder(vectorStore)
+                        .searchRequest(searchRequest)
+                        .build())
                 .build();
     }
 
